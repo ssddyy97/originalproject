@@ -47,6 +47,9 @@ jobs:
       - name: Run tests
         run: ./gradlew clean test
 
+      - name: Build JAR
+        run: ./gradlew bootJar
+
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
         with:
