@@ -52,3 +52,21 @@ jobs:
         with:
           name: reserve-hub-jar
           path: build/libs/*.jar
+  deploy:
+    needs: test
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: reserve-hub-jar
+          path: deploy-artifact
+
+      - name: Deploy Reserve Hub
+        run: |
+          JAR_FILE=$(find deploy-artifact -name "*.jar" -type f | head -1)
+          sudo /usr/local/bin/deploy-reserve-hub "$JAR_FILE"
