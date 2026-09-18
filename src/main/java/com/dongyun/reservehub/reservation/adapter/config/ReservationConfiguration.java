@@ -8,7 +8,8 @@ import com.dongyun.reservehub.reservation.application.port.out.ReservationReposi
 import com.dongyun.reservehub.reservation.application.service.CreateReservationService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import com.dongyun.reservehub.reservation.application.port.in.CancelReservationUseCase;
+import com.dongyun.reservehub.reservation.application.service.CancelReservationService;
 @Configuration
 public class ReservationConfiguration {
 
@@ -33,5 +34,14 @@ public class ReservationConfiguration {
             ReservationRepositoryPort repositoryPort
     ) {
         return new CreateReservationService(repositoryPort);
+    }
+
+    @Bean
+    public CancelReservationUseCase cancelReservationUseCase(
+            ReservationRepositoryPort reservationRepositoryPort
+    ) {
+        return new CancelReservationService(
+                reservationRepositoryPort
+        );
     }
 }

@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import com.dongyun.reservehub.reservation.application.port.in.GetReservationUseCase;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-
+import com.dongyun.reservehub.reservation.application.port.in.CancelReservationUseCase;
+import org.springframework.web.bind.annotation.PatchMapping;
 import java.util.UUID;
 @RestController
 @RequestMapping("/api/reservations")
@@ -19,14 +20,15 @@ public class ReservationController {
 
     private final CreateReservationUseCase createReservationUseCase;
 
+    private final CancelReservationUseCase cancelReservationUseCase;
     public ReservationController(
             CreateReservationUseCase createReservationUseCase,
-            GetReservationUseCase getReservationUseCase
+            GetReservationUseCase getReservationUseCase,
+            CancelReservationUseCase cancelReservationUseCase
     ) {
-        this.createReservationUseCase =
-                createReservationUseCase;
-        this.getReservationUseCase =
-                getReservationUseCase;
+        this.createReservationUseCase = createReservationUseCase;
+        this.getReservationUseCase = getReservationUseCase;
+        this.cancelReservationUseCase = cancelReservationUseCase;
     }
 
     @PostMapping
@@ -54,6 +56,20 @@ public class ReservationController {
 
         return ResponseEntity.ok(
                 ReservationResponse.from(reservation)
+        );
+    }
+
+    @PatchMapping("/{reservationId}/cancel")
+    public ResponseEntity<ReservationResponse> cancelReservation(
+            @PathVariable UUID reservationId
+    ) {
+        Reservation cancelledReservation =
+                cancelReservationUseCase.cancelReservation(
+                        reservationId
+                );
+
+        return ResponseEntity.ok(
+                ReservationResponse.from(cancelledReservation)
         );
     }
 }
