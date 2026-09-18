@@ -1,5 +1,6 @@
 package com.dongyun.reservehub.reservation.adapter.config;
-
+import com.dongyun.reservehub.reservation.application.port.in.GetReservationUseCase;
+import com.dongyun.reservehub.reservation.application.service.GetReservationService;
 import com.dongyun.reservehub.reservation.adapter.out.persistence.jpa.JpaReservationRepositoryAdapter;
 import com.dongyun.reservehub.reservation.adapter.out.persistence.jpa.SpringDataReservationJpaRepository;
 import com.dongyun.reservehub.reservation.application.port.in.CreateReservationUseCase;
@@ -16,6 +17,15 @@ public class ReservationConfiguration {
             SpringDataReservationJpaRepository jpaRepository
     ) {
         return new JpaReservationRepositoryAdapter(jpaRepository);
+    }
+
+    @Bean
+    public GetReservationUseCase getReservationUseCase(
+            ReservationRepositoryPort reservationRepositoryPort
+    ) {
+        return new GetReservationService(
+                reservationRepositoryPort
+        );
     }
 
     @Bean

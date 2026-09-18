@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import com.dongyun.reservehub.reservation.domain.exception.ReservationNotFoundException;
 @RestControllerAdvice
 public class ReservationExceptionHandler {
 
@@ -37,7 +37,19 @@ public class ReservationExceptionHandler {
                 .badRequest()
                 .body(response);
     }
-
+    @ExceptionHandler(ReservationNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleReservationNotFound(
+            ReservationNotFoundException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(
+                        new ApiErrorResponse(
+                                "RESERVATION_NOT_FOUND",
+                                exception.getMessage()
+                        )
+                );
+    }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(
             MethodArgumentNotValidException exception
