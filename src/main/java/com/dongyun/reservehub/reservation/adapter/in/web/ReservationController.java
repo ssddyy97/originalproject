@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.dongyun.reservehub.reservation.application.port.in.CancelReservationUseCase;
 import org.springframework.web.bind.annotation.PatchMapping;
 import java.util.UUID;
+import com.dongyun.reservehub.reservation.application.port.in.CheckReservationAvailabilityUseCase;
+import com.dongyun.reservehub.reservation.domain.model.ReservationPeriod;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/reservations")
 
@@ -21,16 +27,56 @@ public class ReservationController {
     private final CreateReservationUseCase createReservationUseCase;
 
     private final CancelReservationUseCase cancelReservationUseCase;
+    private final CheckReservationAvailabilityUseCase checkReservationAvailabilityUseCase;
     public ReservationController(
-            CreateReservationUseCase createReservationUseCase,
-            GetReservationUseCase getReservationUseCase,
-            CancelReservationUseCase cancelReservationUseCase
-    ) {
-        this.createReservationUseCase = createReservationUseCase;
-        this.getReservationUseCase = getReservationUseCase;
-        this.cancelReservationUseCase = cancelReservationUseCase;
-    }
+        CreateReservationUseCase createReservationUseCase,
+        GetReservationUseCase getReservationUseCase,
+        CancelReservationUseCase cancelReservationUseCase,
+        CheckReservationAvailabilityUseCase
+                checkReservationAvailabilityUseCase
+) {
+    this.createReservationUseCase =
+            createReservationUseCase;
 
+    this.getReservationUseCase =
+            getReservationUseCase;
+
+    this.cancelReservationUseCase =
+            cancelReservationUseCase;
+
+    this.checkReservationAvailabilityUseCase =
+            checkReservationAvailabilityUseCase;
+}
+@GetMapping("/availability")
+public ResponseEntity<ReservationAvailabilityResponse>
+checkAvailability(
+        @RequestParam UUID resourceId,
+
+        @RequestParam
+        @DateTimeFormat(
+                iso = DateTimeFormat.ISO.DATE_TIME
+        )
+        LocalDateTime startAt,
+
+        @RequestParam
+        @DateTimeFormat(
+                iso = DateTimeFormat.ISO.DATE_TIME
+        )
+        LocalDateTime endAt
+) {
+    ReservationPeriod period =
+            new ReservationPeriod(startAt, endAt);
+
+    boolean available =
+            checkReservationAvailabilityUseCase
+                    .isAvailable(resourceId, period);
+
+    return ResponseEntity.ok(
+            new ReservationAvailabilityResponse(
+                    available
+            )
+    );
+}
     @PostMapping
     public ResponseEntity<ReservationResponse> create(
             @Valid @RequestBody CreateReservationRequest request
@@ -72,4 +118,5 @@ public class ReservationController {
                 ReservationResponse.from(cancelledReservation)
         );
     }
+
 }
