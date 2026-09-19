@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Reserve Hub | 会議室予約</title>
+
+    <style>
+        :root {
+            --navy: #14213d;
+            --blue: #2563eb;
+            --blue-dark: #1d4ed8;
+            --blue-light: #eff6ff;
+            --green: #15803d;
+            --green-light: #dcfce7;
+            --red: #dc2626;
+            --red-light: #fee2e2;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-500: #64748b;
+            --gray-700: #334155;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: #172033;
+            background: #f5f7fb;
+            font-family:
+                "Noto Sans JP",
+                "Yu Gothic",
+                "Meiryo",
+                sans-serif;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .topbar {
+            height: 72px;
+            color: white;
+            background: var(--navy);
+        }
+
+        .topbar-inner {
+            width: min(1200px, calc(100% - 40px));
+            height: 100%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            color: var(--navy);
+            background: white;
+            font-weight: 900;
+        }
+
+        .brand strong {
+            display: block;
+            font-size: 19px;
+        }
+
+        .brand small {
+            color: #cbd5e1;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .architecture-link {
+            color: #dbeafe;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .user {
+            padding: 9px 13px;
+            border: 1px solid rgb(255 255 255 / 20%);
+            border-radius: 10px;
+            background: rgb(255 255 255 / 8%);
+            font-size: 13px;
+        }
+
+        .hero {
+            padding: 44px 0 82px;
+            color: white;
+            background:
+                radial-gradient(
+                    circle at 80% 20%,
+                    #60a5fa,
+                    transparent 32%
+                ),
+                linear-gradient(
+                    135deg,
+                    #1e3a8a,
+                    #2563eb
+                );
+        }
+
+        .container {
+            width: min(1200px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .hero-label {
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            opacity: 0.8;
+        }
+
+        .hero h1 {
+            margin: 12px 0;
+            font-size: clamp(34px, 5vw, 56px);
+            line-height: 1.2;
+        }
+
+        .hero p {
+            max-width: 680px;
+            margin: 0;
+            color: #dbeafe;
+            font-size: 17px;
+            line-height: 1.8;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 350px;
+            gap: 22px;
+            margin-top: -48px;
+        }
+
+        .card {
+            padding: 24px;
+            border: 1px solid var(--gray-200);
+            border-radius: 18px;
+            background: var(--white);
+            box-shadow: 0 14px 35px rgb(15 23 42 / 8%);
+        }
+
+        .card + .card {
+            margin-top: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .card-header h2,
+        .card-header h3 {
+            margin: 0;
+        }
+
+        .card-header p {
+            margin: 5px 0 0;
+            color: var(--gray-500);
+            font-size: 13px;
+        }
+
+        input[type="date"] {
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            color: var(--gray-700);
+            background: white;
+            outline: none;
+        }
+
+        input[type="date"]:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgb(37 99 235 / 12%);
+        }
+
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 13px;
+        }
+
+        .room-card {
+            padding: 17px;
+            border: 2px solid var(--gray-200);
+            border-radius: 14px;
+            color: inherit;
+            background: white;
+            text-align: left;
+            transition: 0.18s ease;
+        }
+
+        .room-card:hover {
+            transform: translateY(-2px);
+            border-color: #93c5fd;
+        }
+
+        .room-card.selected {
+            border-color: var(--blue);
+            background: var(--blue-light);
+            box-shadow: 0 7px 18px rgb(37 99 235 / 12%);
+        }
+
+        .room-title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .room-icon {
+            width: 35px;
+            height: 35px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            border-radius: 10px;
+            color: white;
+            background: var(--blue);
+            font-weight: 900;
+        }
+
+        .room-card strong {
+            font-size: 15px;
+        }
+
+        .room-card p {
+            margin: 12px 0 0;
+            color: var(--gray-500);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            color: var(--gray-500);
+            font-size: 12px;
+        }
+
+        .legend span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend i {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .legend .available {
+            background: var(--green-light);
+        }
+
+        .legend .selected {
+            background: var(--blue);
+        }
+
+        .legend .reserved {
+            background: #cbd5e1;
+        }
+
+        .slot-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 11px;
+        }
+
+        .slot {
+            min-height: 82px;
+            padding: 13px;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            color: var(--gray-700);
+            background: white;
+            text-align: left;
+            transition: 0.16s ease;
+        }
+
+        .slot:hover:not(:disabled) {
+            transform: translateY(-2px);
+            border-color: #86efac;
+        }
+
+        .slot.available {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+        }
+
+        .slot.selected {
+            color: white;
+            border-color: var(--blue);
+            background: var(--blue);
+        }
+
+        .slot.reserved {
+            color: #94a3b8;
+            border-color: var(--gray-200);
+            background: var(--gray-100);
+            cursor: not-allowed;
+        }
+
+        .slot.error {
+            color: var(--red);
+            background: var(--red-light);
+            cursor: not-allowed;
+        }
+
+        .slot-time {
+            display: block;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .slot-state {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .booking-panel {
+            position: sticky;
+            top: 20px;
+            align-self: start;
+        }
+
+        .booking-panel h2 {
+            margin: 0 0 5px;
+        }
+
+        .booking-panel > p {
+            margin: 0 0 22px;
+            color: var(--gray-500);
+            font-size: 13px;
+        }
+
+        .summary {
+            display: grid;
+            gap: 13px;
+            padding: 17px;
+            border-radius: 13px;
+            background: var(--gray-50);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            font-size: 13px;
+        }
+
+        .summary-row span {
+            color: var(--gray-500);
+        }
+
+        .summary-row strong {
+            text-align: right;
+        }
+
+        .primary-button,
+        .secondary-button,
+        .danger-button {
+            width: 100%;
+            margin-top: 15px;
+            padding: 13px 16px;
+            border: 0;
+            border-radius: 10px;
+            color: white;
+            font-weight: 800;
+        }
+
+        .primary-button {
+            background: var(--blue);
+        }
+
+        .primary-button:hover:not(:disabled) {
+            background: var(--blue-dark);
+        }
+
+        .secondary-button {
+            color: var(--navy);
+            background: #e2e8f0;
+        }
+
+        .danger-button {
+            background: var(--red);
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .notice {
+            margin-top: 16px;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .notice.success {
+            color: #166534;
+            background: var(--green-light);
+        }
+
+        .notice.error {
+            color: #991b1b;
+            background: var(--red-light);
+        }
+
+        .current-reservation {
+            margin-top: 22px;
+            padding-top: 20px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .current-reservation h3 {
+            margin: 0 0 13px;
+            font-size: 16px;
+        }
+
+        .reservation-box {
+            padding: 14px;
+            border: 1px solid #bfdbfe;
+            border-radius: 11px;
+            background: var(--blue-light);
+        }
+
+        .reservation-box p {
+            margin: 5px 0;
+            font-size: 12px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+
+        .status {
+            display: inline-block;
+            margin-bottom: 8px;
+            padding: 5px 8px;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .status.confirmed {
+            color: var(--green);
+            background: var(--green-light);
+        }
+
+        .status.cancelled {
+            color: var(--red);
+            background: var(--red-light);
+        }
+
+        details {
+            margin-top: 18px;
+        }
+
+        summary {
+            color: var(--blue);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        pre {
+            max-height: 240px;
+            margin: 12px 0 0;
+            padding: 14px;
+            overflow: auto;
+            border-radius: 10px;
+            color: #dbeafe;
+            background: #0f172a;
+            font: 12px/1.6 Consolas, monospace;
+        }
+
+        .architecture-section {
+            margin: 34px 0;
+        }
+
+        .architecture-section h2 {
+            margin-bottom: 6px;
+        }
+
+        .architecture-section > p {
+            margin-top: 0;
+            color: var(--gray-500);
+        }
+
+        .architecture-flow {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .architecture-item {
+            position: relative;
+            padding: 17px;
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            background: white;
+        }
+
+        .architecture-item:not(:first-child)::before {
+            content: "→";
+            position: absolute;
+            top: 35px;
+            left: -12px;
+            color: var(--blue);
+            font-weight: 900;
+        }
+
+        .architecture-item small {
+            color: var(--blue);
+            font-weight: 800;
+        }
+
+        .architecture-item strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        footer {
+            padding: 12px 0 35px;
+            color: var(--gray-500);
+            text-align: center;
+            font-size: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .booking-panel {
+                position: static;
+            }
+
+            .architecture-flow {
+                grid-template-columns: 1fr;
+            }
+
+            .architecture-item:not(:first-child)::before {
+                content: "↓";
+                top: -16px;
+                left: 50%;
+            }
+        }
+
+        @media (max-width: 650px) {
+            .topbar-actions .architecture-link {
+                display: none;
+            }
+
+            .room-grid,
+            .slot-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<header class="topbar">
+    <div class="topbar-inner">
+        <div class="brand">
+            <div class="brand-mark">R</div>
+            <div>
+                <strong>Reserve Hub</strong>
+                <small>Meeting Room Booking</small>
+            </div>
+        </div>
+
+        <div class="topbar-actions">
+            <a class="architecture-link"
+               href="/architecture.html"
+               target="_blank">
+                技術構成を見る
+            </a>
+
+            <div class="user">
+                ソ・ドンユン
+            </div>
+        </div>
+    </div>
+</header>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-label">
+            SMART WORKSPACE RESERVATION
+        </div>
+
+        <h1>会議室を、もっと簡単に。</h1>
+
+        <p>
+            会議室と時間を選択するだけで予約できます。
+            重複予約を防止し、キャンセル後は同じ時間帯を
+            再び利用できます。
+        </p>
+    </div>
+</section>
+
+<main class="container">
+    <div class="workspace">
+        <div>
+            <section class="card">
+                <div class="card-header">
+                    <div>
+                        <h2>会議室を選択</h2>
+                        <p>利用人数と設備を確認してください。</p>
+                    </div>
+
+                    <input id="booking-date"
+                           type="date"
+                           aria-label="予約日">
+                </div>
+
+                <div id="room-grid"
+                     class="room-grid">
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 id="schedule-title">
+                            会議室 Aの空き状況
+                        </h2>
+
+                        <p id="schedule-date"></p>
+                    </div>
+
+                    <div class="legend">
+                        <span>
+                            <i class="available"></i>
+                            空き
+                        </span>
+
+                        <span>
+                            <i class="selected"></i>
+                            選択中
+                        </span>
+
+                        <span>
+                            <i class="reserved"></i>
+                            予約済み
+                        </span>
+                    </div>
+                </div>
+
+                <div id="slot-grid"
+                     class="slot-grid">
+                </div>
+            </section>
+        </div>
+
+        <aside class="card booking-panel">
+            <h2>予約内容</h2>
+            <p>選択した内容を確認してください。</p>
+
+            <div class="summary">
+                <div class="summary-row">
+                    <span>会議室</span>
+                    <strong id="summary-room">
+                        会議室 A
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>利用日</span>
+                    <strong id="summary-date">―</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>利用時間</span>
+                    <strong id="summary-time">
+                        時間を選択してください
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>予約者</span>
+                    <strong>ソ・ドンユン</strong>
+                </div>
+            </div>
+
+            <button id="reserve-button"
+                    class="primary-button"
+                    type="button"
+                    disabled>
+                この内容で予約する
+            </button>
+
+            <div id="notice"
+                 class="notice"
+                 hidden>
+            </div>
+
+            <section id="current-reservation"
+                     class="current-reservation"
+                     hidden>
+                <h3>最新の予約</h3>
+
+                <div class="reservation-box">
+                    <span id="current-status"
+                          class="status">
+                    </span>
+
+                    <p>
+                        <strong id="current-room"></strong>
+                    </p>
+
+                    <p id="current-period"></p>
+                    <p id="current-id"></p>
+                </div>
+
+                <button id="query-button"
+                        class="secondary-button"
+                        type="button">
+                    DBから再照会する
+                </button>
+
+                <button id="cancel-button"
+                        class="danger-button"
+                        type="button">
+                    予約をキャンセルする
+                </button>
+            </section>
+
+            <details>
+                <summary>APIレスポンスを確認</summary>
+                <pre id="api-response">{
+  "message": "API response will appear here"
+}</pre>
+            </details>
+        </aside>
+    </div>
+
+    <section class="architecture-section">
+        <h2>システム構成</h2>
+
+        <p>
+            画面からのリクエストはポートを通じて
+            ドメインロジックとデータベースへ伝達されます。
+        </p>
+
+        <div class="architecture-flow">
+            <div class="architecture-item">
+                <small>CLIENT</small>
+                <strong>Calendar UI</strong>
+            </div>
+
+            <div class="architecture-item">
+                <small>INBOUND ADAPTER</small>
+                <strong>REST Controller</strong>
+            </div>
+
+            <div class="architecture-item">
+                <small>APPLICATION</small>
+                <strong>Use Case</strong>
+            </div>
+
+            <div class="architecture-item">
+                <small>DOMAIN</small>
+                <strong>Reservation</strong>
+            </div>
+
+            <div class="architecture-item">
+                <small>OUTBOUND ADAPTER</small>
+                <strong>JPA · PostgreSQL</strong>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    Reserve Hub · Java 17 · Spring Boot ·
+    Hexagonal Architecture · PostgreSQL
+</footer>
+
+<script>
+    const API_URL = "/api/reservations";
+
+    const MEMBER_ID =
+        "20000000-0000-0000-0000-000000000001";
+
+    const rooms = [
+        {
+            id: "10000000-0000-0000-0000-000000000001",
+            code: "A",
+            name: "会議室 A",
+            capacity: "4名",
+            equipment: "モニター・ホワイトボード"
+        },
+        {
+            id: "10000000-0000-0000-0000-000000000002",
+            code: "B",
+            name: "会議室 B",
+            capacity: "8名",
+            equipment: "大型モニター・Webカメラ"
+        },
+        {
+            id: "10000000-0000-0000-0000-000000000003",
+            code: "C",
+            name: "会議室 C",
+            capacity: "12名",
+            equipment: "プロジェクター・会議システム"
+        }
+    ];
+
+    const timeSlots = Array.from(
+        { length: 9 },
+        (_, index) => {
+            const startHour = 9 + index;
+            const endHour = startHour + 1;
+
+            return {
+                start:
+                    String(startHour).padStart(2, "0") +
+                    ":00",
+                end:
+                    String(endHour).padStart(2, "0") +
+                    ":00"
+            };
+        }
+    );
+
+    const roomGrid =
+        document.getElementById("room-grid");
+
+    const slotGrid =
+        document.getElementById("slot-grid");
+
+    const bookingDate =
+        document.getElementById("booking-date");
+
+    const reserveButton =
+        document.getElementById("reserve-button");
+
+    const queryButton =
+        document.getElementById("query-button");
+
+    const cancelButton =
+        document.getElementById("cancel-button");
+
+    const notice =
+        document.getElementById("notice");
+
+    const apiResponse =
+        document.getElementById("api-response");
+
+    let selectedRoom = rooms[0];
+    let selectedSlot = null;
+    let currentSlots = [];
+    let currentReservation = null;
+    let availabilityRequestNumber = 0;
+
+    function toDateInputValue(date) {
+        const pad = value =>
+            String(value).padStart(2, "0");
+
+        return [
+            date.getFullYear(),
+            pad(date.getMonth() + 1),
+            pad(date.getDate())
+        ].join("-");
+    }
+
+    function formatJapaneseDate(dateValue) {
+        if (!dateValue) {
+            return "―";
+        }
+
+        return new Date(
+            dateValue + "T00:00:00"
+        ).toLocaleDateString(
+            "ja-JP",
+            {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                weekday: "short"
+            }
+        );
+    }
+
+    function initializeDate() {
+        const today = new Date();
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+
+        bookingDate.min =
+            toDateInputValue(today);
+
+        bookingDate.value =
+            toDateInputValue(tomorrow);
+    }
+
+    function renderRooms() {
+        roomGrid.innerHTML = "";
+
+        rooms.forEach(room => {
+            const button =
+                document.createElement("button");
+
+            button.type = "button";
+
+            button.className =
+                "room-card" +
+                (
+                    room.id === selectedRoom.id
+                        ? " selected"
+                        : ""
+                );
+
+            button.innerHTML = `
+                <div class="room-title-row">
+                    <div class="room-icon">
+                        ${room.code}
+                    </div>
+
+                    <div>
+                        <strong>${room.name}</strong>
+                        <div>${room.capacity}</div>
+                    </div>
+                </div>
+
+                <p>${room.equipment}</p>
+            `;
+
+            button.addEventListener(
+                "click",
+                () => {
+                    selectedRoom = room;
+                    selectedSlot = null;
+
+                    renderRooms();
+                    updateSummary();
+                    loadAvailability();
+                }
+            );
+
+            roomGrid.appendChild(button);
+        });
+    }
+
+    function renderLoadingSlots() {
+        slotGrid.innerHTML = "";
+
+        timeSlots.forEach(slot => {
+            const button =
+                document.createElement("button");
+
+            button.type = "button";
+            button.className = "slot reserved";
+            button.disabled = true;
+
+            button.innerHTML = `
+                <span class="slot-time">
+                    ${slot.start} ～ ${slot.end}
+                </span>
+
+                <span class="slot-state">
+                    確認中...
+                </span>
+            `;
+
+            slotGrid.appendChild(button);
+        });
+    }
+
+    function renderSlots() {
+        slotGrid.innerHTML = "";
+
+        currentSlots.forEach(slot => {
+            const button =
+                document.createElement("button");
+
+            button.type = "button";
+
+            const isSelected =
+                selectedSlot &&
+                selectedSlot.start === slot.start;
+
+            if (slot.error) {
+                button.className = "slot error";
+                button.disabled = true;
+            } else if (!slot.available) {
+                button.className = "slot reserved";
+                button.disabled = true;
+            } else if (isSelected) {
+                button.className = "slot selected";
+            } else {
+                button.className = "slot available";
+            }
+
+            const stateText =
+                slot.error
+                    ? "確認失敗"
+                    : !slot.available
+                        ? "予約済み"
+                        : isSelected
+                            ? "選択中"
+                            : "空き";
+
+            button.innerHTML = `
+                <span class="slot-time">
+                    ${slot.start} ～ ${slot.end}
+                </span>
+
+                <span class="slot-state">
+                    ${stateText}
+                </span>
+            `;
+
+            if (slot.available) {
+                button.addEventListener(
+                    "click",
+                    () => {
+                        selectedSlot = slot;
+                        renderSlots();
+                        updateSummary();
+                    }
+                );
+            }
+
+            slotGrid.appendChild(button);
+        });
+    }
+
+    async function request(url, options = {}) {
+        const response =
+            await fetch(url, options);
+
+        const text =
+            await response.text();
+
+        let body = {};
+
+        if (text) {
+            try {
+                body = JSON.parse(text);
+            } catch {
+                body = {
+                    message: text
+                };
+            }
+        }
+
+        return {
+            ok: response.ok,
+            status: response.status,
+            body
+        };
+    }
+
+    async function loadAvailability() {
+        const requestNumber =
+            ++availabilityRequestNumber;
+
+        selectedSlot = null;
+        renderLoadingSlots();
+        updateSummary();
+
+        document.getElementById(
+            "schedule-title"
+        ).textContent =
+            selectedRoom.name + "の空き状況";
+
+        document.getElementById(
+            "schedule-date"
+        ).textContent =
+            formatJapaneseDate(
+                bookingDate.value
+            );
+
+        const results =
+            await Promise.all(
+                timeSlots.map(
+                    async slot => {
+                        const startAt =
+                            bookingDate.value +
+                            "T" +
+                            slot.start +
+                            ":00";
+
+                        const endAt =
+                            bookingDate.value +
+                            "T" +
+                            slot.end +
+                            ":00";
+
+                        const query =
+                            new URLSearchParams({
+                                resourceId:
+                                    selectedRoom.id,
+                                startAt,
+                                endAt
+                            });
+
+                        try {
+                            const result =
+                                await request(
+                                    API_URL +
+                                    "/availability?" +
+                                    query
+                                );
+
+                            return {
+                                ...slot,
+                                available:
+                                    result.ok &&
+                                    result.body.available === true,
+                                error: !result.ok
+                            };
+                        } catch {
+                            return {
+                                ...slot,
+                                available: false,
+                                error: true
+                            };
+                        }
+                    }
+                )
+            );
+
+        if (
+            requestNumber !==
+            availabilityRequestNumber
+        ) {
+            return;
+        }
+
+        currentSlots = results;
+        renderSlots();
+    }
+
+    function updateSummary() {
+        document.getElementById(
+            "summary-room"
+        ).textContent =
+            selectedRoom.name;
+
+        document.getElementById(
+            "summary-date"
+        ).textContent =
+            formatJapaneseDate(
+                bookingDate.value
+            );
+
+        document.getElementById(
+            "summary-time"
+        ).textContent =
+            selectedSlot
+                ? selectedSlot.start +
+                  " ～ " +
+                  selectedSlot.end
+                : "時間を選択してください";
+
+        reserveButton.disabled =
+            !selectedSlot;
+    }
+
+    function showNotice(type, message) {
+        notice.hidden = false;
+        notice.className =
+            "notice " + type;
+        notice.textContent = message;
+    }
+
+    function showApiResponse(status, body) {
+        apiResponse.textContent =
+            "HTTP " +
+            status +
+            "\n\n" +
+            JSON.stringify(
+                body,
+                null,
+                2
+            );
+    }
+
+    function setButtonLoading(
+        button,
+        loading,
+        loadingText
+    ) {
+        if (loading) {
+            button.dataset.originalText =
+                button.textContent;
+
+            button.textContent =
+                loadingText;
+
+            button.disabled = true;
+            return;
+        }
+
+        button.textContent =
+            button.dataset.originalText;
+
+        button.disabled = false;
+    }
+
+    function roomNameById(resourceId) {
+        const room =
+            rooms.find(
+                item =>
+                    item.id === resourceId
+            );
+
+        return room
+            ? room.name
+            : "会議室";
+    }
+
+    function renderCurrentReservation() {
+        const section =
+            document.getElementById(
+                "current-reservation"
+            );
+
+        if (!currentReservation) {
+            section.hidden = true;
+            return;
+        }
+
+        section.hidden = false;
+
+        const statusElement =
+            document.getElementById(
+                "current-status"
+            );
+
+        statusElement.textContent =
+            currentReservation.status;
+
+        statusElement.className =
+            "status " +
+            currentReservation.status
+                .toLowerCase();
+
+        document.getElementById(
+            "current-room"
+        ).textContent =
+            roomNameById(
+                currentReservation.resourceId
+            );
+
+        document.getElementById(
+            "current-period"
+        ).textContent =
+            currentReservation.startAt
+                .replace("T", " ")
+                .slice(0, 16) +
+            " ～ " +
+            currentReservation.endAt
+                .replace("T", " ")
+                .slice(0, 16);
+
+        document.getElementById(
+            "current-id"
+        ).textContent =
+            "ID: " +
+            currentReservation.id;
+
+        cancelButton.disabled =
+            currentReservation.status ===
+            "CANCELLED";
+    }
+
+    reserveButton.addEventListener(
+        "click",
+        async () => {
+            if (!selectedSlot) {
+                return;
+            }
+
+            setButtonLoading(
+                reserveButton,
+                true,
+                "予約処理中..."
+            );
+
+            const requestBody = {
+                resourceId:
+                    selectedRoom.id,
+                memberId:
+                    MEMBER_ID,
+                startAt:
+                    bookingDate.value +
+                    "T" +
+                    selectedSlot.start +
+                    ":00",
+                endAt:
+                    bookingDate.value +
+                    "T" +
+                    selectedSlot.end +
+                    ":00"
+            };
+
+            try {
+                const result =
+                    await request(
+                        API_URL,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+                            body: JSON.stringify(
+                                requestBody
+                            )
+                        }
+                    );
+
+                showApiResponse(
+                    result.status,
+                    result.body
+                );
+
+                if (!result.ok) {
+                    const message =
+                        result.status === 409
+                            ? "この時間帯は既に予約されています。別の時間を選択してください。"
+                            : result.body.message ||
+                              "予約に失敗しました。";
+
+                    showNotice(
+                        "error",
+                        message
+                    );
+
+                    await loadAvailability();
+                    return;
+                }
+
+                currentReservation =
+                    result.body;
+
+                localStorage.setItem(
+                    "reserveHubReservationId",
+                    currentReservation.id
+                );
+
+                renderCurrentReservation();
+
+                showNotice(
+                    "success",
+                    "予約が完了しました。"
+                );
+
+                await loadAvailability();
+            } catch {
+                showNotice(
+                    "error",
+                    "サーバーに接続できません。"
+                );
+            } finally {
+                setButtonLoading(
+                    reserveButton,
+                    false,
+                    ""
+                );
+
+                updateSummary();
+            }
+        }
+    );
+
+    queryButton.addEventListener(
+        "click",
+        async () => {
+            if (!currentReservation) {
+                return;
+            }
+
+            setButtonLoading(
+                queryButton,
+                true,
+                "照会中..."
+            );
+
+            try {
+                const result =
+                    await request(
+                        API_URL +
+                        "/" +
+                        encodeURIComponent(
+                            currentReservation.id
+                        )
+                    );
+
+                showApiResponse(
+                    result.status,
+                    result.body
+                );
+
+                if (!result.ok) {
+                    showNotice(
+                        "error",
+                        result.body.message ||
+                        "予約を照会できませんでした。"
+                    );
+                    return;
+                }
+
+                currentReservation =
+                    result.body;
+
+                renderCurrentReservation();
+
+                showNotice(
+                    "success",
+                    "PostgreSQLから予約情報を再照会しました。"
+                );
+            } catch {
+                showNotice(
+                    "error",
+                    "サーバーに接続できません。"
+                );
+            } finally {
+                setButtonLoading(
+                    queryButton,
+                    false,
+                    ""
+                );
+            }
+        }
+    );
+
+    cancelButton.addEventListener(
+        "click",
+        async () => {
+            if (!currentReservation) {
+                return;
+            }
+
+            setButtonLoading(
+                cancelButton,
+                true,
+                "キャンセル中..."
+            );
+
+            try {
+                const result =
+                    await request(
+                        API_URL +
+                        "/" +
+                        encodeURIComponent(
+                            currentReservation.id
+                        ) +
+                        "/cancel",
+                        {
+                            method: "PATCH"
+                        }
+                    );
+
+                showApiResponse(
+                    result.status,
+                    result.body
+                );
+
+                if (!result.ok) {
+                    showNotice(
+                        "error",
+                        result.body.message ||
+                        "キャンセルに失敗しました。"
+                    );
+                    return;
+                }
+
+                currentReservation =
+                    result.body;
+
+                renderCurrentReservation();
+
+                showNotice(
+                    "success",
+                    "予約をキャンセルしました。同じ時間帯を再び予約できます。"
+                );
+
+                await loadAvailability();
+            } catch {
+                showNotice(
+                    "error",
+                    "サーバーに接続できません。"
+                );
+            } finally {
+                setButtonLoading(
+                    cancelButton,
+                    false,
+                    ""
+                );
+
+                renderCurrentReservation();
+            }
+        }
+    );
+
+    bookingDate.addEventListener(
+        "change",
+        () => {
+            selectedSlot = null;
+            updateSummary();
+            loadAvailability();
+        }
+    );
+
+    async function restoreReservation() {
+        const reservationId =
+            localStorage.getItem(
+                "reserveHubReservationId"
+            );
+
+        if (!reservationId) {
+            return;
+        }
+
+        try {
+            const result =
+                await request(
+                    API_URL +
+                    "/" +
+                    encodeURIComponent(
+                        reservationId
+                    )
+                );
+
+            if (!result.ok) {
+                localStorage.removeItem(
+                    "reserveHubReservationId"
+                );
+                return;
+            }
+
+            currentReservation =
+                result.body;
+
+            renderCurrentReservation();
+        } catch {
+            // 서버 연결 전에는 복원을 생략합니다.
+        }
+    }
+
+    initializeDate();
+    renderRooms();
+    updateSummary();
+    loadAvailability();
+    restoreReservation();
+</script>
+</body>
+</html>

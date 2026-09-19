@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.dongyun.reservehub.reservation.application.port.in.CancelReservationUseCase;
 import com.dongyun.reservehub.reservation.application.service.CancelReservationService;
+import com.dongyun.reservehub.reservation.application.port.in.CheckReservationAvailabilityUseCase;
+import com.dongyun.reservehub.reservation.application.service.CheckReservationAvailabilityService;
 @Configuration
 public class ReservationConfiguration {
 
@@ -44,4 +46,13 @@ public class ReservationConfiguration {
                 reservationRepositoryPort
         );
     }
+    @Bean
+public CheckReservationAvailabilityUseCase
+checkReservationAvailabilityUseCase(
+        ReservationRepositoryPort reservationRepositoryPort
+) {
+    return new CheckReservationAvailabilityService(
+            reservationRepositoryPort
+    );
+}
 }
