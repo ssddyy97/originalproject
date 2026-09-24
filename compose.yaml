@@ -7,11 +7,11 @@ services:
       POSTGRES_USER: testuser
       POSTGRES_PASSWORD: testpass
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - reserve_hub_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U reserve_hub -d reserve_hub"]
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
       interval: 5s
       timeout: 3s
       retries: 10

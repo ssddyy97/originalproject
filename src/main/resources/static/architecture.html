@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Architecture | Reserve Hub</title>
+    <link rel="stylesheet" href="architecture.css">
+    <script src="architecture.js" defer></script>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">R</span><span>Reserve Hub<small>ENGINEERING NOTES</small></span></a><a class="back" href="index.html">予約画面へ戻る ↗</a></header>
+<main>
+    <section class="intro">
+        <div><span class="eyebrow">BEHIND THE EXPERIENCE / 01</span><h1>シンプルな予約を支える、<br><em>境界のある設計。</em></h1><p>予約のルールを中心に、Web とデータベースを分離。<br>Reserve Hub の構造と、ひとつの予約が保存されるまで。</p></div>
+        <div class="intro-note"><span class="tiny">DESIGN PRINCIPLE</span><strong>Hexagonal<br>Architecture</strong><p>Ports &amp; Adapters</p><span class="note-line">業務ロジックを、技術の変更から守る。</span></div>
+    </section>
+    <nav class="section-nav" aria-label="ページ内ナビゲーション"><a href="#structure">01 システム構成</a><a href="#flow">02 予約の流れ</a><a href="#api">03 API リファレンス</a><a href="#rules">04 ビジネスルール</a></nav>
+
+    <section id="structure" class="section">
+        <div class="section-heading"><div><span class="eyebrow">01 / SYSTEM MAP</span><h2>責務を分けて、つなぐ。</h2></div><p>実行時の呼び出しと、ソースコードの依存関係を分けて見る。</p></div>
+        <div class="system-map panel">
+            <div class="map-heading"><span>REQUEST FLOW</span><span>実線の矢印：実行時の呼び出し方向</span></div>
+            <div class="flow-map">
+                <article class="node"><span class="tiny">CLIENT</span><h3>Reservation UI</h3><p>会議室・日付・時間を選択</p><code>index.html</code></article><span class="arrow" aria-hidden="true">→</span>
+                <article class="node"><span class="tiny">INBOUND ADAPTER</span><h3>REST Controller</h3><p>入力検証・HTTP 応答</p><code>ReservationController</code></article><span class="arrow" aria-hidden="true">→</span>
+                <article class="node core"><span class="tiny">INPUT PORT → SERVICE</span><h3>Application</h3><p>ユースケースを実行</p><code>CreateReservationUseCase<br>CreateReservationService</code></article><span class="arrow" aria-hidden="true">→</span>
+                <article class="node"><span class="tiny">OUTPUT PORT</span><h3>Repository Port</h3><p>保存・検索の契約</p><code>ReservationRepositoryPort</code></article><span class="arrow" aria-hidden="true">→</span>
+                <article class="node storage"><span class="tiny">OUTBOUND ADAPTER</span><h3>JPA → PostgreSQL</h3><p>永続化・同時実行の制御</p><code>JpaReservationRepositoryAdapter</code></article>
+            </div>
+            <div class="map-details"><article><span class="tiny">APPLICATION → DOMAIN</span><h3>Reservation / ReservationPeriod</h3><p>サービスがドメインモデルを利用。期間の妥当性、時間の重なり、予約状態の変更を表現します。</p></article><article><span class="tiny">ADAPTER → PORT ← SERVICE</span><h3>依存するのは、インターフェース。</h3><p>JPA と In-Memory は同じ出力ポートを実装。現在の Bean 設定は JPA を選択しています。保存方式の変更には構成の変更が必要です。</p></article></div>
+        </div>
+        <div class="principles"><article><span>01</span><h3>Domain</h3><p>Spring・JPA に依存しない Java のモデルで、予約のルールを表現。</p></article><article><span>02</span><h3>Application</h3><p>入力ポートを実装し、重複チェックから保存までを組み立てる。</p></article><article><span>03</span><h3>Adapters</h3><p>HTTP や DB の具体的な処理を担当。構成クラスが依存を接続。</p></article></div>
+    </section>
+
+    <section id="flow" class="section">
+        <div class="section-heading"><div><span class="eyebrow">02 / REQUEST WALKTHROUGH</span><h2>予約リクエストの、その先へ。</h2></div><p>ステップを選ぶと処理の役割を確認できます。</p></div>
+        <div class="walkthrough panel">
+            <div class="walk-top"><span class="method post">POST</span><code>/api/reservations</code><span class="illustration-label">説明用のフロー · API の実行は行いません</span></div>
+            <div class="walk-layout">
+                <div class="step-list" role="tablist" aria-label="予約作成の処理" aria-orientation="vertical">
+                    <button type="button" id="step-0" role="tab" aria-selected="true" aria-controls="step-detail" data-step="0"><span>01</span>リクエストを受け取る<b>→</b></button>
+                    <button type="button" id="step-1" role="tab" aria-selected="false" aria-controls="step-detail" tabindex="-1" data-step="1"><span>02</span>期間と重複を確認する<b>→</b></button>
+                    <button type="button" id="step-2" role="tab" aria-selected="false" aria-controls="step-detail" tabindex="-1" data-step="2"><span>03</span>ドメインモデルを生成<b>→</b></button>
+                    <button type="button" id="step-3" role="tab" aria-selected="false" aria-controls="step-detail" tabindex="-1" data-step="3"><span>04</span>DB に保存する<b>→</b></button>
+                    <button type="button" id="step-4" role="tab" aria-selected="false" aria-controls="step-detail" tabindex="-1" data-step="4"><span>05</span>結果を返す<b>→</b></button>
+                </div>
+                <div id="step-detail" role="tabpanel" aria-labelledby="step-0" tabindex="0" class="step-detail"><span class="tiny" id="step-layer">INBOUND ADAPTER</span><h3 id="step-title">HTTP を、ユースケースの入力へ。</h3><p id="step-copy">Controller が @Valid で必須項目を検証し、CreateReservationRequest を CreateReservationCommand に変換。入力ポートを通じてサービスを呼び出します。</p><pre id="step-code">CreateReservationRequest
+    → CreateReservationCommand
+    → CreateReservationUseCase.create()</pre><div class="step-bottom"><span id="step-count">01 / 05</span><button type="button" id="next-step">次のステップ →</button></div></div>
+            </div>
+        </div>
+        <aside class="insight"><span class="insight-symbol">↳</span><div><h3>「確認してから保存する」だけでは、同時リクエストは防げない。</h3><p>JPA 保存時に会議室単位の advisory transaction lock を取得し、PostgreSQL の排他制約で CONFIRMED の時間重複を拒否。競合はアダプターがドメイン例外へ変換し、HTTP 409 を返します。</p></div><span class="pill">CONCURRENCY</span></aside>
+    </section>
+
+    <section id="api" class="section">
+        <div class="section-heading"><div><span class="eyebrow">03 / API REFERENCE</span><h2>4 つの操作で、予約を管理。</h2></div><p>Base path <code>/api/reservations</code></p></div>
+        <div class="panel api-table-wrap"><table><caption class="sr-only">予約 API 一覧</caption><thead><tr><th scope="col">METHOD</th><th scope="col">ENDPOINT</th><th scope="col">役割・入力</th><th scope="col">成功</th></tr></thead><tbody>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/reservations</code></td><td>予約を作成<small>JSON: resourceId, memberId, startAt, endAt</small></td><td><span class="response-code">201</span></td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/reservations/{reservationId}</code></td><td>予約を取得<small>Path: reservationId (UUID)</small></td><td><span class="response-code">200</span></td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/reservations/availability</code></td><td>空き状況を確認<small>Query: resourceId, startAt, endAt</small></td><td><span class="response-code">200</span></td></tr>
+            <tr><td><span class="method patch">PATCH</span></td><td><code>/api/reservations/{reservationId}/cancel</code></td><td>予約をキャンセル<small>Path: reservationId (UUID) · Body 不要</small></td><td><span class="response-code">200</span></td></tr>
+        </tbody></table></div>
+        <details class="example panel"><summary>予約作成のリクエスト・レスポンス例 <span>JSON ↗</span></summary><p>説明用の固定データです。日時はタイムゾーンを含まない LocalDateTime です。</p><div class="json-grid"><div><span class="tiny">REQUEST · APPLICATION/JSON</span><pre>{
+  "resourceId": "10000000-0000-0000-0000-000000000001",
+  "memberId": "20000000-0000-0000-0000-000000000001",
+  "startAt": "2026-10-01T09:00:00",
+  "endAt": "2026-10-01T10:00:00"
+}</pre></div><div><span class="tiny">RESPONSE · 201 CREATED</span><pre>{
+  "id": "30000000-0000-0000-0000-000000000001",
+  "resourceId": "10000000-0000-0000-0000-000000000001",
+  "memberId": "20000000-0000-0000-0000-000000000001",
+  "startAt": "2026-10-01T09:00:00",
+  "endAt": "2026-10-01T10:00:00",
+  "status": "CONFIRMED"
+}</pre></div></div></details>
+        <div class="error-codes"><div><strong>400</strong><span>入力エラー<small>INVALID_REQUEST / INVALID_RESERVATION</small></span></div><div><strong>404</strong><span>予約が存在しない<small>RESERVATION_NOT_FOUND</small></span></div><div><strong>409</strong><span>予約時間の競合<small>RESERVATION_TIME_CONFLICT</small></span></div></div>
+    </section>
+
+    <section id="rules" class="section">
+        <div class="section-heading"><div><span class="eyebrow">04 / BUSINESS RULES</span><h2>予約のルールを、明確に。</h2></div><p>ドメイン・サービス・DB が、それぞれの責務を担当。</p></div>
+        <div class="rules-grid"><article class="panel rule"><span class="tiny">TIME VALIDATION</span><h3>開始時刻 &lt; 終了時刻</h3><p>同じ時刻や逆転した期間は作成できません。ReservationPeriod と DB の CHECK 制約で検証。</p></article><article class="panel rule"><span class="tiny">NO OVERLAP</span><h3>同じ会議室、重なる時間は不可。</h3><p>CONFIRMED のみを対象に重複を確認。09:00–10:00 と 10:00–11:00 のような連続予約は可能です。</p></article><article class="panel rule"><span class="tiny">STATE TRANSITION</span><h3>CONFIRMED → CANCELLED</h3><p>キャンセルは削除ではなく状態変更。取り消した予約を再度取り消す操作はドメインが拒否します。</p></article><article class="panel rule"><span class="tiny">AVAILABLE AGAIN</span><h3>取り消した時間を、もう一度。</h3><p>CANCELLED は重複確認と DB の排他制約の対象外。同じ会議室・時間帯で新たに予約できます。</p></article></div>
+        <details class="implementation-note"><summary>実装上の補足・発表時の説明ポイント</summary><p>In-Memory 実装は保存先の差し替え例です。PostgreSQL と同等の永続性・同時実行制御は提供しません。再キャンセル時の IllegalStateException は専用の HTTP エラーマッピングが未実装です。上記の 409 は予約時間の競合に対する応答です。</p><p>空き状況の確認は予約枠の確保ではありません。最終的な予約可否は作成処理で判断されます。</p></details>
+    </section>
+    <section class="closing"><div><span class="eyebrow">BUILT WITH</span><h2>業務の中心は、そのままに。</h2><p>Web と保存の実装を境界の外側へ。ルールと技術を分ける設計。</p></div><div class="stack"><span>Java 17</span><span>Spring Boot</span><span>Spring Data JPA</span><span>PostgreSQL</span><span>Flyway</span><span>JUnit</span></div></section>
+</main>
+<footer><strong>Reserve Hub</strong><span>Architecture &amp; API Guide</span><a href="index.html">予約画面で試す ↗</a></footer>
+</body>
+</html>

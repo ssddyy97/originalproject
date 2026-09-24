@@ -292,6 +292,11 @@
             background: #cbd5e1;
         }
 
+        .legend .mine {
+            background: var(--blue-light);
+            border: 1px solid var(--blue);
+        }
+
         .slot-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -330,6 +335,17 @@
             border-color: var(--gray-200);
             background: var(--gray-100);
             cursor: not-allowed;
+        }
+
+        .slot.mine {
+            color: var(--blue-dark);
+            border-color: #93c5fd;
+            background: var(--blue-light);
+        }
+
+        .slot.mine:hover:not(:disabled) {
+            border-color: var(--red);
+            background: #fff7f7;
         }
 
         .slot.error {
@@ -598,6 +614,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="workspace.css">
 </head>
 
 <body>
@@ -615,7 +632,7 @@
             <a class="architecture-link"
                href="/architecture.html"
                target="_blank">
-                技術構成を見る
+                技術構成 ↗
             </a>
 
             <div class="user">
@@ -628,26 +645,28 @@
 <section class="hero">
     <div class="container">
         <div class="hero-label">
-            SMART WORKSPACE RESERVATION
+            A SPACE FOR YOUR NEXT IDEA
         </div>
 
-        <h1>会議室を、もっと簡単に。</h1>
+        <h1>いいアイデアは、<br>いい空間から。</h1>
 
         <p>
-            会議室と時間を選択するだけで予約できます。
-            重複予約を防止し、キャンセル後は同じ時間帯を
-            再び利用できます。
+            集中する時間も、チームで生み出す時間も。<br>
+            あなたの働き方に合う会議室を、シンプルに予約。
         </p>
+        <a class="hero-cta" href="#booking">会議室を探す <span>↗</span></a>
+        <div class="hero-caption">RESERVE HUB COLLECTION <span>Space to think. Room to connect.</span></div>
     </div>
 </section>
 
 <main class="container">
+    <div class="workspace-heading" id="booking"><div><span class="eyebrow">BOOK YOUR SPACE</span><h2>次のミーティングを、ここで。</h2></div><span class="steps">01 空間を選ぶ <span>→</span> 02 時間を選ぶ <span>→</span> 03 予約する</span></div>
     <div class="workspace">
         <div>
             <section class="card">
                 <div class="card-header">
                     <div>
-                        <h2>会議室を選択</h2>
+                        <h2><span class="step-number">01</span> 会議室を選択</h2>
                         <p>利用人数と設備を確認してください。</p>
                     </div>
 
@@ -686,6 +705,10 @@
                             <i class="reserved"></i>
                             予約済み
                         </span>
+                        <span>
+                            <i class="mine"></i>
+                            自分の予約（クリックで取消）
+                        </span>
                     </div>
                 </div>
 
@@ -696,6 +719,8 @@
         </div>
 
         <aside class="card booking-panel">
+            <div class="panel-label">YOUR RESERVATION <span>↗</span></div>
+            <img id="summary-image" class="summary-image" src="images/workspace.jpg" alt="会議室 Aのイメージ">
             <h2>予約内容</h2>
             <p>選択した内容を確認してください。</p>
 
@@ -758,7 +783,7 @@
                 <button id="query-button"
                         class="secondary-button"
                         type="button">
-                    DBから再照会する
+                    予約情報を更新する
                 </button>
 
                 <button id="cancel-button"
@@ -777,7 +802,7 @@
         </aside>
     </div>
 
-    <section class="architecture-section">
+    <details class="architecture-section"><summary>システム構成・技術情報</summary>
         <h2>システム構成</h2>
 
         <p>
@@ -811,12 +836,11 @@
                 <strong>JPA · PostgreSQL</strong>
             </div>
         </div>
-    </section>
+    </details>
 </main>
 
 <footer>
-    Reserve Hub · Java 17 · Spring Boot ·
-    Hexagonal Architecture · PostgreSQL
+    <strong>Reserve Hub</strong><span> よりよい仕事は、よりよい空間から。</span><small>写真は会議室のイメージです。</small>
 </footer>
 
 <script>
@@ -824,6 +848,9 @@
 
     const MEMBER_ID =
         "20000000-0000-0000-0000-000000000001";
+
+    const RESERVATION_IDS_KEY =
+        "reserveHubReservationIds";
 
     const rooms = [
         {
@@ -895,6 +922,81 @@
     let currentSlots = [];
     let currentReservation = null;
     let availabilityRequestNumber = 0;
+    let cancellingReservationId = null;
+
+    function savedReservationIds() {
+        try {
+            const ids = JSON.parse(
+                localStorage.getItem(
+                    RESERVATION_IDS_KEY
+                ) || "[]"
+            );
+
+            return Array.isArray(ids)
+                ? ids.filter(id =>
+                    typeof id === "string"
+                )
+                : [];
+        } catch {
+            return [];
+        }
+    }
+
+    // このブラウザから登録した予約のみ、枠から取り消せるようにします。
+    const knownReservationIds =
+        new Set(savedReservationIds());
+    const ownReservations = new Map();
+
+    function rememberReservation(reservation) {
+        if (!reservation || !reservation.id) {
+            return;
+        }
+
+        if (
+            reservation.status === "CONFIRMED" &&
+            reservation.memberId === MEMBER_ID
+        ) {
+            ownReservations.set(
+                reservation.id,
+                reservation
+            );
+            knownReservationIds.add(
+                reservation.id
+            );
+        } else {
+            ownReservations.delete(
+                reservation.id
+            );
+            knownReservationIds.delete(
+                reservation.id
+            );
+        }
+
+        localStorage.setItem(
+            RESERVATION_IDS_KEY,
+            JSON.stringify(
+                [...knownReservationIds]
+            )
+        );
+    }
+
+    function ownReservationForSlot(slot) {
+        const startAt =
+            bookingDate.value +
+            "T" + slot.start + ":00";
+        const endAt =
+            bookingDate.value +
+            "T" + slot.end + ":00";
+
+        return [...ownReservations.values()]
+            .find(reservation =>
+                reservation.status === "CONFIRMED" &&
+                reservation.resourceId ===
+                    selectedRoom.id &&
+                reservation.startAt === startAt &&
+                reservation.endAt === endAt
+            );
+    }
 
     function toDateInputValue(date) {
         const pad = value =>
@@ -956,6 +1058,7 @@
                 );
 
             button.innerHTML = `
+                <div class="room-photo"><img src="${roomImage(room)}" alt="${room.name}のイメージ"><span class="room-photo-label">ROOM ${room.code}</span><span class="room-check" aria-hidden="true">✓</span></div>
                 <div class="room-title-row">
                     <div class="room-icon">
                         ${room.code}
@@ -970,6 +1073,7 @@
                 <p>${room.equipment}</p>
             `;
 
+            button.setAttribute("aria-pressed", String(room.id === selectedRoom.id));
             button.addEventListener(
                 "click",
                 () => {
@@ -1024,9 +1128,20 @@
                 selectedSlot &&
                 selectedSlot.start === slot.start;
 
+            const ownReservation =
+                !slot.error && !slot.available
+                    ? ownReservationForSlot(slot)
+                    : null;
+
             if (slot.error) {
                 button.className = "slot error";
                 button.disabled = true;
+            } else if (ownReservation) {
+                button.className = "slot mine";
+                button.disabled =
+                    Boolean(cancellingReservationId);
+                button.title =
+                    "クリックしてこの予約をキャンセル";
             } else if (!slot.available) {
                 button.className = "slot reserved";
                 button.disabled = true;
@@ -1039,6 +1154,8 @@
             const stateText =
                 slot.error
                     ? "確認失敗"
+                    : ownReservation
+                        ? "自分の予約・クリックで取消"
                     : !slot.available
                         ? "予約済み"
                         : isSelected
@@ -1055,7 +1172,15 @@
                 </span>
             `;
 
-            if (slot.available) {
+            if (ownReservation) {
+                button.addEventListener(
+                    "click",
+                    () => cancelReservation(
+                        ownReservation.id,
+                        true
+                    )
+                );
+            } else if (slot.available) {
                 button.addEventListener(
                     "click",
                     () => {
@@ -1177,7 +1302,14 @@
         renderSlots();
     }
 
+    function roomImage(room) {
+        return room.code === "A" ? "images/workspace.jpg" : "images/room-" + room.code.toLowerCase() + ".jpg";
+    }
+
     function updateSummary() {
+        const summaryImage = document.getElementById("summary-image");
+        summaryImage.src = roomImage(selectedRoom);
+        summaryImage.alt = selectedRoom.name + "のイメージ";
         document.getElementById(
             "summary-room"
         ).textContent =
@@ -1308,7 +1440,9 @@
 
         cancelButton.disabled =
             currentReservation.status ===
-            "CANCELLED";
+            "CANCELLED" ||
+            cancellingReservationId ===
+                currentReservation.id;
     }
 
     reserveButton.addEventListener(
@@ -1381,6 +1515,10 @@
                 currentReservation =
                     result.body;
 
+                rememberReservation(
+                    currentReservation
+                );
+
                 localStorage.setItem(
                     "reserveHubReservationId",
                     currentReservation.id
@@ -1451,7 +1589,13 @@
                 currentReservation =
                     result.body;
 
+                rememberReservation(
+                    currentReservation
+                );
+
                 renderCurrentReservation();
+
+                await loadAvailability();
 
                 showNotice(
                     "success",
@@ -1472,71 +1616,105 @@
         }
     );
 
-    cancelButton.addEventListener(
-        "click",
-        async () => {
-            if (!currentReservation) {
-                return;
-            }
+    async function cancelReservation(
+        reservationId,
+        confirmFirst = false
+    ) {
+        if (cancellingReservationId) {
+            return;
+        }
 
+        if (
+            confirmFirst &&
+            !window.confirm(
+                "この予約をキャンセルしますか？"
+            )
+        ) {
+            return;
+        }
+
+        cancellingReservationId = reservationId;
+        const isCurrent =
+            currentReservation &&
+            currentReservation.id === reservationId;
+
+        if (isCurrent) {
             setButtonLoading(
                 cancelButton,
                 true,
                 "キャンセル中..."
             );
+        }
+        renderSlots();
 
-            try {
-                const result =
-                    await request(
-                        API_URL +
-                        "/" +
-                        encodeURIComponent(
-                            currentReservation.id
-                        ) +
-                        "/cancel",
-                        {
-                            method: "PATCH"
-                        }
-                    );
-
-                showApiResponse(
-                    result.status,
-                    result.body
+        try {
+            const result =
+                await request(
+                    API_URL +
+                    "/" +
+                    encodeURIComponent(
+                        reservationId
+                    ) +
+                    "/cancel",
+                    {
+                        method: "PATCH"
+                    }
                 );
 
-                if (!result.ok) {
-                    showNotice(
-                        "error",
-                        result.body.message ||
-                        "キャンセルに失敗しました。"
-                    );
-                    return;
-                }
+            showApiResponse(
+                result.status,
+                result.body
+            );
 
-                currentReservation =
-                    result.body;
-
-                renderCurrentReservation();
-
-                showNotice(
-                    "success",
-                    "予約をキャンセルしました。同じ時間帯を再び予約できます。"
-                );
-
-                await loadAvailability();
-            } catch {
+            if (!result.ok) {
                 showNotice(
                     "error",
-                    "サーバーに接続できません。"
+                    result.body.message ||
+                    "キャンセルに失敗しました。"
                 );
-            } finally {
+                return;
+            }
+
+            rememberReservation(result.body);
+
+            if (isCurrent) {
+                currentReservation = result.body;
+            }
+
+            showNotice(
+                "success",
+                "予約をキャンセルしました。同じ時間帯を再び予約できます。"
+            );
+
+            await loadAvailability();
+        } catch {
+            showNotice(
+                "error",
+                "サーバーに接続できません。"
+            );
+        } finally {
+            cancellingReservationId = null;
+
+            if (isCurrent) {
                 setButtonLoading(
                     cancelButton,
                     false,
                     ""
                 );
+            }
 
-                renderCurrentReservation();
+            renderCurrentReservation();
+            renderSlots();
+        }
+    }
+
+    cancelButton.addEventListener(
+        "click",
+        () => {
+            if (currentReservation) {
+                cancelReservation(
+                    currentReservation.id
+                );
             }
         }
     );
@@ -1550,47 +1728,85 @@
         }
     );
 
-    async function restoreReservation() {
-        const reservationId =
+    async function restoreReservations() {
+        const latestReservationId =
             localStorage.getItem(
                 "reserveHubReservationId"
             );
 
-        if (!reservationId) {
-            return;
+        if (latestReservationId) {
+            knownReservationIds.add(
+                latestReservationId
+            );
         }
 
-        try {
-            const result =
-                await request(
-                    API_URL +
-                    "/" +
-                    encodeURIComponent(
-                        reservationId
-                    )
-                );
+        await Promise.all(
+            [...knownReservationIds].map(
+                async reservationId => {
+                    try {
+                        const result =
+                            await request(
+                                API_URL +
+                                "/" +
+                                encodeURIComponent(
+                                    reservationId
+                                )
+                            );
 
-            if (!result.ok) {
-                localStorage.removeItem(
-                    "reserveHubReservationId"
-                );
-                return;
-            }
+                        if (result.status === 404) {
+                            knownReservationIds.delete(
+                                reservationId
+                            );
 
-            currentReservation =
-                result.body;
+                            if (
+                                reservationId ===
+                                latestReservationId
+                            ) {
+                                localStorage.removeItem(
+                                    "reserveHubReservationId"
+                                );
+                            }
+                            return;
+                        }
 
-            renderCurrentReservation();
-        } catch {
-            // 서버 연결 전에는 복원을 생략합니다.
-        }
+                        if (!result.ok) {
+                            return;
+                        }
+
+                        rememberReservation(
+                            result.body
+                        );
+
+                        if (
+                            reservationId ===
+                            latestReservationId
+                        ) {
+                            currentReservation =
+                                result.body;
+                        }
+                    } catch {
+                        // 接続できない場合、保存済み ID は残します。
+                    }
+                }
+            )
+        );
+
+        localStorage.setItem(
+            RESERVATION_IDS_KEY,
+            JSON.stringify(
+                [...knownReservationIds]
+            )
+        );
+        renderCurrentReservation();
     }
 
     initializeDate();
     renderRooms();
     updateSummary();
-    loadAvailability();
-    restoreReservation();
+    renderLoadingSlots();
+    restoreReservations().finally(
+        () => loadAvailability()
+    );
 </script>
 </body>
 </html>
