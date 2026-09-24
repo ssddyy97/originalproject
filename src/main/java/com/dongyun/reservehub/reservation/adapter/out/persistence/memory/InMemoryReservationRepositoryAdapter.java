@@ -51,7 +51,6 @@ public final class InMemoryReservationRepositoryAdapter
     }
     public Optional<Reservation> findById(UUID reservationId) {
         Objects.requireNonNull(reservationId);
-        System.out.println("asdfasdf");
         return Optional.ofNullable(
                 reservations.get(reservationId)
         );
