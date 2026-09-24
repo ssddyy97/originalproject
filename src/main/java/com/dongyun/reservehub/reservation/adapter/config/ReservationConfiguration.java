@@ -14,7 +14,6 @@ import com.dongyun.reservehub.reservation.application.port.in.CheckReservationAv
 import com.dongyun.reservehub.reservation.application.service.CheckReservationAvailabilityService;
 @Configuration
 public class ReservationConfiguration {
-
     @Bean
     public ReservationRepositoryPort reservationRepositoryPort(
             SpringDataReservationJpaRepository jpaRepository
