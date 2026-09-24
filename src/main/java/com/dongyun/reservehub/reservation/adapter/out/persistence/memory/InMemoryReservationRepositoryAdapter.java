@@ -22,7 +22,8 @@ public final class InMemoryReservationRepositoryAdapter
             ReservationPeriod period
     ) {
         Objects.requireNonNull(resourceId);
-        Objects.requireNonNull(period);
+        Objects.requireNonNull(period);            System.out.println("asfasd");
+
 
         return reservations.values()
                 .stream()
@@ -51,6 +52,7 @@ public final class InMemoryReservationRepositoryAdapter
     }
     public Optional<Reservation> findById(UUID reservationId) {
         Objects.requireNonNull(reservationId);
+        System.out.println();
         return Optional.ofNullable(
                 reservations.get(reservationId)
         );

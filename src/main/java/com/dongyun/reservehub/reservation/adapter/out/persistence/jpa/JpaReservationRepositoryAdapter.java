@@ -45,7 +45,6 @@ public class JpaReservationRepositoryAdapter
     @Transactional
     public Reservation save(Reservation reservation) {
         Objects.requireNonNull(reservation);
-
         repository.acquireResourceLock(
                 toLockKey(reservation.resourceId())
         );
