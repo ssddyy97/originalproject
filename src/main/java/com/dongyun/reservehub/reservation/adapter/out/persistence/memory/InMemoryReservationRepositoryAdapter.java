@@ -22,7 +22,7 @@ public final class InMemoryReservationRepositoryAdapter
             ReservationPeriod period
     ) {
         Objects.requireNonNull(resourceId);
-        Objects.requireNonNull(period);            System.out.println("asfasd");
+        Objects.requireNonNull(period);
 
 
         return reservations.values()
