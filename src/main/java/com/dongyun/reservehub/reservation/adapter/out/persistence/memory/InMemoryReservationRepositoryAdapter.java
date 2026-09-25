@@ -23,7 +23,6 @@ public final class InMemoryReservationRepositoryAdapter
     ) {
         Objects.requireNonNull(resourceId);
         Objects.requireNonNull(period);
-        System.out.println("asdfasdf");
 
 
 
